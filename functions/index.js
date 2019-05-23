@@ -61,10 +61,6 @@ exports.fillPotential = functions.firestore
               })
               .catch((err) => console.log(err));
           })
-
-          return new Promise((resolve, reject) => {
-
-          });
         })
         .catch((err) => console.log(err));
     } else {
