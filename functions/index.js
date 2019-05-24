@@ -54,7 +54,7 @@ exports.fillPotential = functions.firestore
     }
 
     return fillPotentialPromise
-      .then(() => console.log(`Successfully called fillPotential on ${userRef.id}`))
+      .then(() => console.log(`Successfully executed fillPotential for user ${userRef.id}`))
       .catch((err) => console.log(err));
   });
 
