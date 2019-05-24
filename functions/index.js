@@ -67,46 +67,46 @@ const addUsersToPotentialMutually = (u1, u1Ref, u2, u2Ref) => {
 
 const Db = {
   Keys: {
-    ACADEMIC_YEAR: "academic_year",
-    AGE: "age",
-    BUDGET: "budget",
-    COLLEGE: "college",
-    EMAIL: "email",
-    FIRST_NAME: "first_name",
-    GENDER: "gender",
-    LAST_NAME: "last_name",
-    MAJOR: "major",
-    PHONE_NUMBER: "phone_number",
+    ACADEMIC_YEAR: 'academic_year',
+    AGE: 'age',
+    BUDGET: 'budget',
+    COLLEGE: 'college',
+    EMAIL: 'email',
+    FIRST_NAME: 'first_name',
+    GENDER: 'gender',
+    LAST_NAME: 'last_name',
+    MAJOR: 'major',
+    PHONE_NUMBER: 'phone_number',
 
-    ABOUT_ME: "about_me",
-    HOBBIES: "hobbies",
-    INTERESTS: "interests",
-    LIVING_ACCOMMODATIONS: "living_accommodations",
-    OTHER_THINGS_YOU_SHOULD_KNOW: "other_things_you_should_know",
+    ABOUT_ME: 'about_me',
+    HOBBIES: 'hobbies',
+    INTERESTS: 'interests',
+    LIVING_ACCOMMODATIONS: 'living_accommodations',
+    OTHER_THINGS_YOU_SHOULD_KNOW: 'other_things_you_should_know',
 
-    POTENTIAL: "potential",
-    LIKED: "liked",
-    DISLIKED: "disliked",
-    MATCHED: "matched",
+    POTENTIAL: 'potential',
+    LIKED: 'liked',
+    DISLIKED: 'disliked',
+    MATCHED: 'matched',
 
-    ALCOHOL_VALUE: "alcohol_value",
-    ALLOW_PETS_VALUE: "allow_pets_value",
-    CLEAN_VALUE: "clean_value",
-    OVERNIGHT_GUESTS_VALUE: "overnight_guests_value",
-    PARTY_VALUE: "party_value",
-    RESERVED_VALUE: "reserved_value",
-    SMOKE_VALUE: "smoke_value",
-    STAY_UP_LATE_ON_WEEKDAYS_VALUE: "stay_up_late_on_weekdays_value",
+    ALCOHOL_VALUE: 'alcohol_value',
+    ALLOW_PETS_VALUE: 'allow_pets_value',
+    CLEAN_VALUE: 'clean_value',
+    OVERNIGHT_GUESTS_VALUE: 'overnight_guests_value',
+    PARTY_VALUE: 'party_value',
+    RESERVED_VALUE: 'reserved_value',
+    SMOKE_VALUE: 'smoke_value',
+    STAY_UP_LATE_ON_WEEKDAYS_VALUE: 'stay_up_late_on_weekdays_value',
 
-    ROOMMATE_ALCOHOL_VALUE: `roommate_${ALCOHOL_VALUE}`,
-    ROOMMATE_ALLOW_PETS_VALUE: `roommate_${ALLOW_PETS_VALUE}`,
-    ROOMMATE_CLEAN_VALUE: `roommate_${CLEAN_VALUE}`,
-    ROOMMATE_OVERNIGHT_GUESTS_VALUE: `roommate_${OVERNIGHT_GUESTS_VALUE}`,
-    ROOMMATE_PARTY_VALUE: `roommate_${PARTY_VALUE}`,
-    ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE: "roommate_prefer_same_gender_roommate_value",
-    ROOMMATE_RESERVED_VALUE: `roommate_${RESERVED_VALUE}`,
-    ROOMMATE_SMOKE_VALUE: `roommate_${SMOKE_VALUE}`,
-    ROOMMATE_STAY_UP_LATE_ON_WEEKDAYS_VALUE: `roommate_${STAY_UP_LATE_ON_WEEKDAYS_VALUE}`
+    ROOMMATE_ALCOHOL_VALUE: 'roommate_alcohol_value',
+    ROOMMATE_ALLOW_PETS_VALUE: 'roommate_allow_pets_value',
+    ROOMMATE_CLEAN_VALUE: 'roommate_clean_value',
+    ROOMMATE_OVERNIGHT_GUESTS_VALUE: 'roommate_overnight_guests_value',
+    ROOMMATE_PARTY_VALUE: 'roommate_party_value',
+    ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE: 'roommate_prefer_same_gender_roommate_value',
+    ROOMMATE_RESERVED_VALUE: 'roommate_reserved_value',
+    ROOMMATE_SMOKE_VALUE: 'roommate_smoke_value',
+    ROOMMATE_STAY_UP_LATE_ON_WEEKDAYS_VALUE: 'roommate_stay_up_late_on_weekdays_value'
   }
 };
 
@@ -125,7 +125,7 @@ const filterMatch = (u1, u2) => {
     && reservedValuePasses(u1, u2)
     && smokeValuePasses(u1, u2)
     && stayUpLateOnWeekdaysValuePasses(u1, u2);
-}
+};
 
 const genderPasses = (u1, u2) => {
   u1Gender = u1[Db.Keys.GENDER];
@@ -134,8 +134,8 @@ const genderPasses = (u1, u2) => {
   u1GenderPref = u1[Db.Keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE];
   u2GenderPref = u2[Db.Keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE];
 
-  return u1Gender.equals(u2Gender) || (u1GenderPref === 0 && u2GenderPref === 0);
-}
+  return u1Gender === u2Gender || (u1GenderPref === 0 && u2GenderPref === 0);
+};
 
 const alcoholValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.ALCOHOL_VALUE);
 
@@ -163,5 +163,4 @@ const differenceLessThanTwo = (u1, u2, personalKey) => {
   const u2RoommateValue = u2[personalKey];
 
   return Math.abs(u1RoommateValue - u2PersonalValue) < 2 && Math.abs(u1PersonalValue - u2RoommateValue) < 2;
-}
-
+};
