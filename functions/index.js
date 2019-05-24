@@ -12,57 +12,78 @@ exports.fillPotential = functions.firestore
     const userRef = snap.ref;
     const usersRef = snap.ref.parent;
 
+    let fillPotentialPromise;
     if (user.roommate_prefer_same_gender_roommate_value) {
-      return usersRef.listDocuments()
-        .then((docs) => {
-          docs.forEach((doc) => {
-            doc.get()
-              .then((otherUserSnap) => {
-                const otherUser = otherUserSnap.data();
-                const otherUserRef = otherUserSnap.ref;
-                if (userRef.id !== otherUserRef.id && filterMatch(user, otherUser)) {
-                  addUsersToPotentialMutually(user, userRef, otherUser, otherUserRef);
-                }
-              })
-              .catch((err) => console.log(err));
-          })
-        })
-        .catch((err) => console.log(err));
-    } else {
       // Query by same gender
       const genderQueryRef = usersRef.where(Db.Keys.GENDER, '==', user.gender);
-      return genderQueryRef.get()
+      fillPotentialPromise = genderQueryRef.get()
         .then((querySnap) => {
+          const updateUserPromises = [];
           const otherUserSnaps = querySnap.docs;
           otherUserSnaps.forEach((otherUserSnap) => {
             const otherUser = otherUserSnap.data();
             const otherUserRef = otherUserSnap.ref;
             if (userRef.id !== otherUserRef.id && filterMatch(user, otherUser)) {
-              addUsersToPotentialMutually(user, userRef, otherUser, otherUserRef);
+              updateUserPromises.concat(
+                mutuallyAddToPotential(user, userRef, otherUser, otherUserRef)
+              );
             }
           });
+          return Promise.all(updateUserPromises);
+        });
+    } else {
+      fillPotentialPromise = usersRef.listDocuments()
+        .then((docs) => {
+          const getDocPromises = [];
+          docs.forEach((doc) => getDocPromises.push(doc.get()));
+          return Promise.all(getDocPromises);
         })
-        .catch((error) => console.log(error));
+        .then((otherUserSnaps) => {
+          const updateUserPromises = [];
+          otherUserSnaps.forEach((otherUserSnap) => {
+            const otherUser = otherUserSnap.data();
+            const otherUserRef = otherUserSnap.ref;
+            if (userRef.id !== otherUserRef.id && filterMatch(user, otherUser)) {
+              updateUserPromises.concat(
+                mutuallyAddToPotential(user, userRef, otherUser, otherUserRef)
+              );
+            }
+          });
+          return Promise.all(updateUserPromises);
+        });
     }
+
+    return fillPotentialPromise
+      .then(() => console.log(`Successfully called fillPotential on ${userRef.id}`))
+      .catch((err) => console.log(err));
   });
 
 /**
  * Adds u1's ID to u2's potential, add u2's ID to u1's potential, and update u1 
  * and u2.
  * 
- * @param {Object} u1 
- * @param {FirebaseFirestore.DocumentReference} u1Ref 
+ * @param {Object} u1
+ * @param {FirebaseFirestore.DocumentReference} u1Ref
  * @param {Object} u2
- * @param {FirebaseFirestore.DocumentReference} u2Ref 
+ * @param {FirebaseFirestore.DocumentReference} u2Ref
+ * @returns {[Promise<FirebaseFirestore.WriteResult>]}
  */
-const addUsersToPotentialMutually = (u1, u1Ref, u2, u2Ref) => {
+const mutuallyAddToPotential = (u1, u1Ref, u2, u2Ref) => {
+  const updateUserPromises = [];
+
   // Add u1's ID to u2's potential and update u2
   u2[Db.Keys.POTENTIAL][u1Ref.id] = '';
-  u2Ref.update({[Db.Keys.POTENTIAL]: u2[Db.Keys.POTENTIAL]});
+  updateUserPromises.push(
+    u2Ref.update({[Db.Keys.POTENTIAL]: u2[Db.Keys.POTENTIAL]})
+  );
 
   // Add u2's ID to u1's potential and update u1
   u1[Db.Keys.POTENTIAL][u2Ref.id] = '';
-  u1Ref.update({[Db.Keys.POTENTIAL]: u2[Db.Keys.POTENTIAL]});
+  updateUserPromises.push(
+    u1Ref.update({[Db.Keys.POTENTIAL]: u1[Db.Keys.POTENTIAL]})
+  );
+
+  return updateUserPromises;
 };
 
 const Db = {
