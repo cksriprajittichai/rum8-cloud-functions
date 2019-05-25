@@ -1,6 +1,99 @@
 // The Cloud Functions for Firebase SDK to create Cloud Functions and setup triggers.
 const functions = require('firebase-functions');
 
+exports.updateRelations = functions.firestore
+  .document('users/{userId}')
+  .onUpdate((change, context) => {
+    const userBefore = change.before.data();
+    const user = change.after.data();
+    const userRef = change.after.ref;
+    const usersRef = userRef.parent;
+
+    if (!preferencesChanged(userBefore, user)) {
+      console.log(`Successfully executed updateRelations for user ${userRef.id}. No preferences were changed. There is nothing to be done.`);
+      return null;
+    }
+
+    const genderUnchanged = userBefore[db.keys.GENDER] === user[db.keys.GENDER];
+    const prefersSameGenderRoommate = user[db.keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE];
+    const prefersSameGenderRoommateUnchanged = userBefore[db.keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE] === user[db.keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE];
+
+    let updateRelationsPromise;
+    if (genderUnchanged && prefersSameGenderRoommate && prefersSameGenderRoommateUnchanged) {
+      // Query by same gender iff the user
+      //   1) didn't change gender
+      //   2) prefers a same gender roommate
+      //   3) preferred a same gender roommate before and still prefers a same 
+      //      gender roommate after
+      const genderQueryRef = usersRef.where(db.keys.GENDER, '==', user.gender);
+      updateRelationsPromise = genderQueryRef.get()
+        .then((querySnap) => {
+          const updateUserPromises = [];
+          const otherUserSnaps = querySnap.docs;
+          otherUserSnaps.forEach((otherUserSnap) => {
+            const otherUser = otherUserSnap.data();
+            const otherUserRef = otherUserSnap.ref;
+            const otherUserId = otherUserRef.id;
+            if (userRef.id !== otherUserId &&
+              !user[db.keys.LIKED].hasOwnProperty(otherUserId) &&
+              !user[db.keys.DISLIKED].hasOwnProperty(otherUserId) &&
+              !user[db.keys.MATCHED].hasOwnProperty(otherUserId)) {
+              const potentialMatch = filterMatch(user, otherUser);
+              const alreadyInPotential = user[db.keys.POTENTIAL].hasOwnProperty(otherUserId);
+
+              if (alreadyInPotential && !potentialMatch) {
+                updateUserPromises.concat(
+                  mutuallyRemoveFromPotential(user, userRef, otherUser, otherUserRef)
+                );
+              } else if (!alreadyInPotential && potentialMatch) {
+                updateUserPromises.concat(
+                  mutuallyAddToPotential(user, userRef, otherUser, otherUserRef)
+                );
+              }
+            }
+          });
+          return Promise.all(updateUserPromises);
+        });
+    } else {
+      updateRelationsPromise = usersRef.listDocuments()
+        .then((docs) => {
+          const getDocPromises = [];
+          docs.forEach((doc) => getDocPromises.push(doc.get()));
+          return Promise.all(getDocPromises);
+        })
+        .then((otherUserSnaps) => {
+          const updateUserPromises = [];
+          otherUserSnaps.forEach((otherUserSnap) => {
+            const otherUser = otherUserSnap.data();
+            const otherUserRef = otherUserSnap.ref;
+            const otherUserId = otherUserRef.id;
+            if (userRef.id !== otherUserId &&
+              !user[db.keys.LIKED].hasOwnProperty(otherUserId) &&
+              !user[db.keys.DISLIKED].hasOwnProperty(otherUserId) &&
+              !user[db.keys.MATCHED].hasOwnProperty(otherUserId)) {
+              const potentialMatch = filterMatch(user, otherUser);
+              const alreadyInPotential = user[db.keys.POTENTIAL].hasOwnProperty(otherUserId);
+
+              if (alreadyInPotential && !potentialMatch) {
+                updateUserPromises.concat(
+                  mutuallyRemoveFromPotential(user, userRef, otherUser, otherUserRef)
+                );
+              } else if (!alreadyInPotential && potentialMatch) {
+                updateUserPromises.concat(
+                  mutuallyAddToPotential(user, userRef, otherUser, otherUserRef)
+                );
+              }
+            }
+          });
+          return Promise.all(updateUserPromises);
+        });
+    }
+
+    return updateRelationsPromise
+      .then(() => console.log(`Successfully executed updateRelations for user ${userRef.id}.`))
+      .catch((err) => console.log(err));
+  });
+
 exports.fillPotential = functions.firestore
   .document('users/{userId}')
   .onCreate((snap, context) => {
@@ -50,9 +143,16 @@ exports.fillPotential = functions.firestore
     }
 
     return fillPotentialPromise
-      .then(() => console.log(`Successfully executed fillPotential for user ${userRef.id}`))
+      .then(() => console.log(`Successfully executed fillPotential for user ${userRef.id}.`))
       .catch((err) => console.log(err));
   });
+
+/**
+ * @param {Object} userBefore
+ * @param {Object} userAfter
+ * @returns {Boolean}
+ */
+const preferencesChanged = (userBefore, userAfter) => preferences.some((preference) => userBefore[preference] !== userAfter[preference]);
 
 /**
  * Adds u1's ID to u2's potential, add u2's ID to u1's potential, and update u1 
@@ -75,6 +175,34 @@ const mutuallyAddToPotential = (u1, u1Ref, u2, u2Ref) => {
 
   // Add u2's ID to u1's potential and update u1
   u1[db.keys.POTENTIAL][u2Ref.id] = '';
+  updateUserPromises.push(
+    u1Ref.update({[db.keys.POTENTIAL]: u1[db.keys.POTENTIAL]})
+  );
+
+  return updateUserPromises;
+};
+
+/**
+ * Remove u1's ID from u2's potential, remove u2's ID from u1's potential, and 
+ * update u1 and u2.
+ * 
+ * @param {Object} u1
+ * @param {FirebaseFirestore.DocumentReference} u1Ref
+ * @param {Object} u2
+ * @param {FirebaseFirestore.DocumentReference} u2Ref
+ * @returns {[Promise<FirebaseFirestore.WriteResult>]}
+ */
+const mutuallyRemoveFromPotential = (u1, u1Ref, u2, u2Ref) => {
+  const updateUserPromises = [];
+
+  // Remove u1's ID from u2's potential and update u2
+  delete u2[db.keys.POTENTIAL][u1Ref.id];
+  updateUserPromises.push(
+    u2Ref.update({[db.keys.POTENTIAL]: u2[db.keys.POTENTIAL]})
+  );
+
+  // Remove u2's ID from u1's potential and update u1
+  delete u1[db.keys.POTENTIAL][u2Ref.id];
   updateUserPromises.push(
     u1Ref.update({[db.keys.POTENTIAL]: u1[db.keys.POTENTIAL]})
   );
