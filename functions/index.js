@@ -11,7 +11,7 @@ exports.fillPotential = functions.firestore
     let fillPotentialPromise;
     if (user.roommate_prefer_same_gender_roommate_value) {
       // Query by same gender
-      const genderQueryRef = usersRef.where(Db.Keys.GENDER, '==', user.gender);
+      const genderQueryRef = usersRef.where(Db.keys.GENDER, '==', user.gender);
       fillPotentialPromise = genderQueryRef.get()
         .then((querySnap) => {
           const updateUserPromises = [];
@@ -68,22 +68,22 @@ const mutuallyAddToPotential = (u1, u1Ref, u2, u2Ref) => {
   const updateUserPromises = [];
 
   // Add u1's ID to u2's potential and update u2
-  u2[Db.Keys.POTENTIAL][u1Ref.id] = '';
+  u2[Db.keys.POTENTIAL][u1Ref.id] = '';
   updateUserPromises.push(
-    u2Ref.update({[Db.Keys.POTENTIAL]: u2[Db.Keys.POTENTIAL]})
+    u2Ref.update({[Db.keys.POTENTIAL]: u2[Db.keys.POTENTIAL]})
   );
 
   // Add u2's ID to u1's potential and update u1
-  u1[Db.Keys.POTENTIAL][u2Ref.id] = '';
+  u1[Db.keys.POTENTIAL][u2Ref.id] = '';
   updateUserPromises.push(
-    u1Ref.update({[Db.Keys.POTENTIAL]: u1[Db.Keys.POTENTIAL]})
+    u1Ref.update({[Db.keys.POTENTIAL]: u1[Db.keys.POTENTIAL]})
   );
 
   return updateUserPromises;
 };
 
 const Db = {
-  Keys: {
+  keys: {
     ACADEMIC_YEAR: 'academic_year',
     AGE: 'age',
     BUDGET: 'budget',
@@ -145,30 +145,30 @@ const filterMatch = (u1, u2) => {
 };
 
 const genderPasses = (u1, u2) => {
-  u1Gender = u1[Db.Keys.GENDER];
-  u2Gender = u2[Db.Keys.GENDER];
+  u1Gender = u1[Db.keys.GENDER];
+  u2Gender = u2[Db.keys.GENDER];
 
-  u1GenderPref = u1[Db.Keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE];
-  u2GenderPref = u2[Db.Keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE];
+  u1GenderPref = u1[Db.keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE];
+  u2GenderPref = u2[Db.keys.ROOMMATE_PREFER_SAME_GENDER_ROOMMATE_VALUE];
 
   return u1Gender === u2Gender || (u1GenderPref === 0 && u2GenderPref === 0);
 };
 
-const alcoholValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.ALCOHOL_VALUE);
+const alcoholValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.keys.ALCOHOL_VALUE);
 
-const allowPetsValue = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.ALLOW_PETS_VALUE);
+const allowPetsValue = (u1, u2) => differenceLessThanTwo(u1, u2, Db.keys.ALLOW_PETS_VALUE);
 
-const cleanValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.CLEAN_VALUE);
+const cleanValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.keys.CLEAN_VALUE);
 
-const overnightGuestsValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.OVERNIGHT_GUESTS_VALUE);
+const overnightGuestsValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.keys.OVERNIGHT_GUESTS_VALUE);
 
-const partyValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.PARTY_VALUE);
+const partyValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.keys.PARTY_VALUE);
 
-const reservedValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.RESERVED_VALUE);
+const reservedValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.keys.RESERVED_VALUE);
 
-const smokeValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.SMOKE_VALUE);
+const smokeValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.keys.SMOKE_VALUE);
 
-const stayUpLateOnWeekdaysValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.Keys.STAY_UP_LATE_ON_WEEKDAYS_VALUE);
+const stayUpLateOnWeekdaysValuePasses = (u1, u2) => differenceLessThanTwo(u1, u2, Db.keys.STAY_UP_LATE_ON_WEEKDAYS_VALUE);
 
 const differenceLessThanTwo = (u1, u2, personalKey) => {
   roommateKey = `roommate_${personalKey}`;
