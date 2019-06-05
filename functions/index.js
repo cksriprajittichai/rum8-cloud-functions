@@ -212,22 +212,7 @@ const mutuallyRemoveFromPotential = (u1, u1Ref, u2, u2Ref) => {
 
 const db = {
   keys: {
-    ACADEMIC_YEAR: 'academic_year',
-    AGE: 'age',
-    BUDGET: 'budget',
-    COLLEGE: 'college',
-    EMAIL: 'email',
-    FIRST_NAME: 'first_name',
     GENDER: 'gender',
-    LAST_NAME: 'last_name',
-    MAJOR: 'major',
-    PHONE_NUMBER: 'phone_number',
-
-    ABOUT_ME: 'about_me',
-    HOBBIES: 'hobbies',
-    INTERESTS: 'interests',
-    LIVING_ACCOMMODATIONS: 'living_accommodations',
-    OTHER_THINGS_YOU_SHOULD_KNOW: 'other_things_you_should_know',
 
     POTENTIAL: 'potential',
     LIKED: 'liked',
