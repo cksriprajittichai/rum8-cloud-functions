@@ -1,5 +1,8 @@
 // The Cloud Functions for Firebase SDK to create Cloud Functions and setup triggers.
 const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+
+admin.initializeApp();
 
 exports.updateRelations = functions.firestore
   .document('users/{userId}')
@@ -147,6 +150,48 @@ exports.fillPotential = functions.firestore
       .catch((err) => console.log(err));
   });
 
+exports.sendNewMatchNotification = functions.firestore
+  .document('users/{userId}')
+  .onUpdate((change, context) => {
+    const userBefore = change.before.data();
+    const user = change.after.data();
+    const userRef = change.after.ref;
+
+    const matchedBefore = userBefore[db.keys.MATCHED];
+    const matchedBeforeKeys = Object.keys(matchedBefore);
+    const matched = user[db.keys.MATCHED];
+    const matchedKeys = Object.keys(matched);
+
+    if (matchedBeforeKeys.length >= matchedKeys.length) {
+      console.log(`Successfully executed sendNewMatchNotification for user ${userRef.id}. A new match was not detected. There is nothing to be done.`);
+      return null;
+    }
+
+    const newMatchIds = matchedKeys.filter((id) => !matchedBefore.hasOwnProperty(id));
+    const usersRef = userRef.parent;
+    const instanceIdToken = user[db.keys.INSTANCE_ID_TOKEN];
+
+    const getDocPromises = newMatchIds.map((id) => usersRef.doc(id).get());
+    return Promise.all(getDocPromises)
+      .then((newMatchSnaps) => {
+        const sendNotificationPromises = newMatchSnaps.map((newMatchSnap) => {
+          const newMatch = newMatchSnap.data();
+          const firstName = newMatch[db.keys.FIRST_NAME];
+          const lastName = newMatch[db.keys.LAST_NAME];
+          const payload = {
+            notification: {
+              title: 'New link!',
+              body: `You are now linked with ${firstName} ${lastName}`
+            }
+          };
+          return admin.messaging().sendToDevice(instanceIdToken, payload);
+        });
+        return Promise.all(sendNotificationPromises);
+      })
+      .then((deviceResponses) => console.log(`Successfully executed sendNewMatchNotification for user ${userRef.id}. Notified user for new matches: ${newMatchIds}`))
+      .catch((err) => console.log(err));
+  });
+
 /**
  * @param {Object} userBefore
  * @param {Object} userAfter
@@ -212,7 +257,10 @@ const mutuallyRemoveFromPotential = (u1, u1Ref, u2, u2Ref) => {
 
 const db = {
   keys: {
+    FIRST_NAME: 'first_name',
     GENDER: 'gender',
+    INSTANCE_ID_TOKEN: 'instance_id_token',
+    LAST_NAME: 'last_name',
 
     POTENTIAL: 'potential',
     LIKED: 'liked',
