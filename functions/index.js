@@ -176,12 +176,14 @@ exports.sendNewMatchNotification = functions.firestore
       .then((newMatchSnaps) => {
         const sendNotificationPromises = newMatchSnaps.map((newMatchSnap) => {
           const newMatch = newMatchSnap.data();
+          const newMatchId = newMatchSnap.ref.id;
           const firstName = newMatch[db.keys.FIRST_NAME];
           const lastName = newMatch[db.keys.LAST_NAME];
           const payload = {
             data: {
               title: 'New link!',
-              body: `You are now linked with ${firstName} ${lastName}`
+              body: `You are now linked with ${firstName} ${lastName}`,
+              newMatchId: newMatchId
             }
           };
           return admin.messaging().sendToDevice(instanceIdToken, payload);
