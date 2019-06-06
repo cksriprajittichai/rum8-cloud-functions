@@ -179,7 +179,7 @@ exports.sendNewMatchNotification = functions.firestore
           const firstName = newMatch[db.keys.FIRST_NAME];
           const lastName = newMatch[db.keys.LAST_NAME];
           const payload = {
-            notification: {
+            data: {
               title: 'New link!',
               body: `You are now linked with ${firstName} ${lastName}`
             }
